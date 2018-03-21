@@ -5,7 +5,7 @@ namespace jonom\SilverStripe\VersionHistory;
 use SilverStripe\Security\Security;
 use SilverStripe\Control\Controller;
 
-class VersionHistory_Controller extends Controller
+class VersionHistoryController extends Controller
 {
 
     private static $url_handlers = array(
@@ -23,7 +23,7 @@ class VersionHistory_Controller extends Controller
     {
         $request = $this->getRequest();
         $id = (int) $request->param('ID');
-        $model = $request->param('Model');
+        $model = str_replace('-', '\\', $request->param('Model'));
         $versionID = $request->param('VersionID');
         $otherVersionID = $request->param('OtherVersionID');
 

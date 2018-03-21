@@ -10,12 +10,14 @@ use SilverStripe\View\Requirements;
 use SilverStripe\View\Parsers\Diff;
 use SilverStripe\View\ViewableData;
 use SilverStripe\Forms\LiteralField;
+use SilverStripe\Control\Controller;
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\Forms\ReadonlyField;
 use SilverStripe\Forms\CheckboxField;
 
 class VersionHistoryExtension extends DataExtension
 {
+
     public function updateCMSFields(FieldList $fields)
     {
         $vFields = $this->owner->getVersionsFormFields();
@@ -23,7 +25,14 @@ class VersionHistoryExtension extends DataExtension
         // Only add history field if history exists
         if ($this->owner->ID && $vFields) {
             // URL for ajax request
-            $urlBase = Director::absoluteURL('cms-version-history/compare/'.$this->owner->ClassName.'/'.$this->owner->ID.'/');
+            $urlBase = Controller::join_links(
+                Director::absoluteBaseURL(),
+                'cms-version-history',
+                'compare',
+                str_replace('\\', '-', $this->owner->ClassName),
+                $this->owner->ID
+            );
+            
             $fields->findOrMakeTab('Root.VersionHistory', 'History');
             $fields->addFieldToTab(
                 'Root.VersionHistory',
@@ -83,6 +92,7 @@ class VersionHistoryExtension extends DataExtension
     public function VersionComparisonSummary($versionID = null, $otherVersionID = null)
     {
         $toRecord = null;
+        $classname = $this->owner->ClassName;
 
         if ($versionID && $otherVersionID) {
             // Compare two specified versions
@@ -93,8 +103,16 @@ class VersionHistoryExtension extends DataExtension
                 $toVersion = $otherVersionID;
                 $fromVersion = $versionID;
             }
-            $fromRecord = Versioned::get_version($this->owner->class, $this->owner->ID, $fromVersion);
-            $toRecord = Versioned::get_version($this->owner->class, $this->owner->ID, $toVersion);
+            $fromRecord = Versioned::get_version(
+                $classname,
+                $this->owner->ID,
+                $fromVersion
+            );
+            $toRecord = Versioned::get_version(
+                $classname,
+                $this->owner->ID,
+                $toVersion
+            );
         } else {
             // Compare specified version with previous. Fallback to latest version if none specified.
             $filter = '';

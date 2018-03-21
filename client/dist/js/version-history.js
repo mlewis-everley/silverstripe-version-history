@@ -40,9 +40,11 @@
 					if(selected.length != 1) return false;
 				}
 
-				url = url + selected.map(function() {
+				url = url + "/" + selected.map(function() {
 					return this.value;
 				}).get().join('/');
+
+				console.log(url);
 
 				// Fetch comparison and update results
 				results.addClass('loading').load(url, function(){
