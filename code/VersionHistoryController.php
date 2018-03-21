@@ -1,5 +1,10 @@
 <?php
 
+namespace jonom\SilverStripe\VersionHistory;
+
+use SilverStripe\Security\Security;
+use SilverStripe\Control\Controller;
+
 class VersionHistory_Controller extends Controller
 {
 
@@ -16,14 +21,14 @@ class VersionHistory_Controller extends Controller
      */
     public function compare()
     {
-        $id = (int) $this->getRequest()->param('ID');
-        $model = $this->getRequest()->param('Model');
-        $versionID = $this->getRequest()->param('VersionID');
-        $otherVersionID = $this->getRequest()->param('OtherVersionID');
+        $request = $this->getRequest();
+        $id = (int) $request->param('ID');
+        $model = $request->param('Model');
+        $versionID = $request->param('VersionID');
+        $otherVersionID = $request->param('OtherVersionID');
 
         if (!$id) {
             $this->httpError(400, 'No ID specified');
-
             return false;
         }
 
@@ -31,7 +36,6 @@ class VersionHistory_Controller extends Controller
 
         if (!$record) {
             $this->httpError(404);
-
             return false;
         }
 

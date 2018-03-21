@@ -1,5 +1,19 @@
 <?php
 
+namespace jonom\SilverStripe\VersionHistory;
+
+use SilverStripe\Core\Convert;
+use SilverStripe\Forms\FieldList;
+use SilverStripe\Control\Director;
+use SilverStripe\ORM\DataExtension;
+use SilverStripe\View\Requirements;
+use SilverStripe\View\Parsers\Diff;
+use SilverStripe\View\ViewableData;
+use SilverStripe\Forms\LiteralField;
+use SilverStripe\Versioned\Versioned;
+use SilverStripe\Forms\ReadonlyField;
+use SilverStripe\Forms\CheckboxField;
+
 class VersionHistoryExtension extends DataExtension
 {
     public function updateCMSFields(FieldList $fields)
@@ -29,8 +43,8 @@ class VersionHistoryExtension extends DataExtension
                 )
             );
             
-            Requirements::css('version-history/css/version-history.css');
-            Requirements::javascript('version-history/javascript/VersionHistory.js');
+            Requirements::css('jonom/silverstripe-version-history: client/dist/css/version-history.css');
+            Requirements::javascript('jonom/silverstripe-version-history: client/dist/js/version-history.js');
         }
     }
 
@@ -107,20 +121,23 @@ class VersionHistoryExtension extends DataExtension
 
         // Generate a list of fields and information about them
         $fieldNames = array();
-        foreach ($this->owner->db() as $fieldName => $fieldType) {
+
+        foreach ($this->owner->config()->db as $fieldName => $fieldType) {
             $fieldNames[$fieldName] = array(
                 'FieldName' => $fieldName,
                 'Name' => $fieldName,
                 'Type' => 'Field',
             );
         }
-        foreach ($this->owner->hasOne() as $has1) {
+    
+        foreach ($this->owner->config()->has_one as $has1) {
             $fieldNames[$has1] = array(
                 'FieldName' => $has1.'ID',
                 'Name' => $has1,
                 'Type' => 'HasOne',
             );
         }
+
         unset($fieldNames['Version']);
 
         // Compare values between records and make them look nice
@@ -128,7 +145,10 @@ class VersionHistoryExtension extends DataExtension
             $currFieldName = $fieldInfo['FieldName'];
 
             if ((isset($fromRecord) && $toRecord->{$currFieldName} !== $fromRecord->{$currFieldName})) {
-                $compareValue = Diff::compareHTML($this->getVersionFieldValue($fromRecord, $fieldInfo), $this->getVersionFieldValue($toRecord, $fieldInfo));
+                $compareValue = Diff::compareHTML(
+                    $this->getVersionFieldValue($fromRecord, $fieldInfo),
+                    $this->getVersionFieldValue($toRecord, $fieldInfo)
+                );
             } else {
                 $compareValue = $this->getVersionFieldValue($toRecord, $fieldInfo);
             }
@@ -168,12 +188,12 @@ class VersionHistoryExtension extends DataExtension
             'Versions' => $versions,
         ))->renderWith('VersionHistory_versions');
 
-        $fields = new FieldList(
-            new CheckboxField(
+        $fields = FieldList::create(
+            CheckboxField::create(
                 'CompareMode',
                 _t('CMSPageHistoryController.COMPAREMODE', 'Compare mode (select two)')
             ),
-            new LiteralField('VersionsHtml', $versionsHtml)
+            LiteralField::create('VersionsHtml', $versionsHtml)
         );
 
         return $fields;
