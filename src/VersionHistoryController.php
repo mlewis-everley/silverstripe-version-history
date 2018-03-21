@@ -3,9 +3,10 @@
 namespace jonom\SilverStripe\VersionHistory;
 
 use SilverStripe\Security\Security;
+use SilverStripe\Admin\LeftAndMain;
 use SilverStripe\Control\Controller;
 
-class VersionHistoryController extends Controller
+class VersionHistoryController extends LeftAndMain
 {
 
     private static $url_handlers = array(

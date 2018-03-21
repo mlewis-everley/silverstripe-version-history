@@ -14,6 +14,8 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\Forms\ReadonlyField;
 use SilverStripe\Forms\CheckboxField;
+use SilverStripe\Forms\HTMLReadonlyField;
+use SilverStripe\Forms\HTMLEditor\HTMLEditorField;
 
 class VersionHistoryExtension extends DataExtension
 {
@@ -37,23 +39,17 @@ class VersionHistoryExtension extends DataExtension
             $fields->addFieldToTab(
                 'Root.VersionHistory',
                 LiteralField::create(
-                    'VersionsHistoryMenu',
-                    "<div id=\"VersionHistoryMenu\" class=\"cms-content-tools\" data-url-base=\"$urlBase\">"
-                    .$vFields->forTemplate()
-                    .'</div>'
+                    'VersionsHistoryTab',
+                    $this->owner->renderWith(
+                        "jonom\\SilverStripe\\VersionHistory\\VersionHistoryTab",
+                        $vars = [
+                            "URL" => $urlBase,
+                            "Versions" => $vFields,
+                            "Summary" => $this->owner->VersionComparisonSummary()
+                        ]
+                    )
                 )
             );
-            $fields->addFieldToTab(
-                'Root.VersionHistory',
-                LiteralField::create('VersionComparisonSummary',
-                    '<div id="VersionComparisonSummary">'
-                    .$this->owner->VersionComparisonSummary()
-                    .'</div>'
-                )
-            );
-            
-            Requirements::css('jonom/silverstripe-version-history: client/dist/css/version-history.css');
-            Requirements::javascript('jonom/silverstripe-version-history: client/dist/js/version-history.js');
         }
     }
 
@@ -171,7 +167,7 @@ class VersionHistoryExtension extends DataExtension
                 $compareValue = $this->getVersionFieldValue($toRecord, $fieldInfo);
             }
 
-            $field = ReadonlyField::create(
+            $field = HTMLReadonlyField::create(
                 "VersionHistory$fieldName",
                 $this->owner->fieldLabel($fieldName),
                 $compareValue
@@ -204,7 +200,7 @@ class VersionHistoryExtension extends DataExtension
 
         $versionsHtml = $vd->customise(array(
             'Versions' => $versions,
-        ))->renderWith('VersionHistory_versions');
+        ))->renderWith('jonom\\SilverStripe\\VersionHistory\\VersionHistory_versions');
 
         $fields = FieldList::create(
             CheckboxField::create(

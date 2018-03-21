@@ -1,28 +1,18 @@
-/* ==========================================================================
-   Version History
-   ========================================================================== */
-
-#Root_VersionHistory {
-	padding-left: 264px;
-	position: relative;
-}
-#VersionHistoryMenu.cms-content-tools {
-	width: 210px;
-	position: absolute;
-	left: 0;
-	padding: 12px 16px;
-	top: 0;
-	bottom: 0;
-}
-#VersionHistoryMenu.cms-content-tools table {
-	width: 100%;
-}
-#VersionHistoryMenu td:hover {
-	cursor: pointer;
+#Root_VersionHistory  .cms-content-tools table,
+#Root_VersionHistory #VersionHistoryMenu .form-group {
+    margin: 0;
 }
 
-#VersionComparisonSummary ins { background-color: #DFD; padding: 2px; text-decoration: none; }
-#VersionComparisonSummary del { background-color: #FDD; padding: 2px; color: #ff4444; }
-#VersionComparisonSummary.loading {
-	opacity: 0.5;
+#Root_VersionHistory #VersionHistoryMenu tr {
+    cursor: pointer;
+}
+
+#Root_VersionHistory #VersionHistoryMenu .form__field-holder {
+    margin: 0;
+    flex: 100%;
+    max-width: 100%;
+}
+
+#Root_VersionHistory .cms-content-tools.collapsed #VersionHistoryMenu {
+    display: none;
 }

@@ -44,8 +44,6 @@
 					return this.value;
 				}).get().join('/');
 
-				console.log(url);
-
 				// Fetch comparison and update results
 				results.addClass('loading').load(url, function(){
 					results.removeClass('loading');
