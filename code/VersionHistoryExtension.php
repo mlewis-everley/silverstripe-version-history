@@ -4,21 +4,31 @@ class VersionHistoryExtension extends DataExtension
 {
     public function updateCMSFields(FieldList $fields)
     {
+        $vFields = $this->owner->getVersionsFormFields();
+
         // Only add history field if history exists
-        if ($this->owner->ID && $vFields = $this->owner->getVersionsFormFields()) {
+        if ($this->owner->ID && $vFields) {
             // URL for ajax request
             $urlBase = Director::absoluteURL('cms-version-history/compare/'.$this->owner->ClassName.'/'.$this->owner->ID.'/');
             $fields->findOrMakeTab('Root.VersionHistory', 'History');
-            $fields->addFieldToTab('Root.VersionHistory', LiteralField::create('VersionsHistoryMenu',
-                "<div id=\"VersionHistoryMenu\" class=\"cms-content-tools\" data-url-base=\"$urlBase\">"
-                .$vFields->forTemplate()
-                .'</div>'
-            ));
-            $fields->addFieldToTab('Root.VersionHistory', LiteralField::create('VersionComparisonSummary',
-                '<div id="VersionComparisonSummary">'
-                .$this->owner->VersionComparisonSummary()
-                .'</div>'
-            ));
+            $fields->addFieldToTab(
+                'Root.VersionHistory',
+                LiteralField::create(
+                    'VersionsHistoryMenu',
+                    "<div id=\"VersionHistoryMenu\" class=\"cms-content-tools\" data-url-base=\"$urlBase\">"
+                    .$vFields->forTemplate()
+                    .'</div>'
+                )
+            );
+            $fields->addFieldToTab(
+                'Root.VersionHistory',
+                LiteralField::create('VersionComparisonSummary',
+                    '<div id="VersionComparisonSummary">'
+                    .$this->owner->VersionComparisonSummary()
+                    .'</div>'
+                )
+            );
+            
             Requirements::css('version-history/css/version-history.css');
             Requirements::javascript('version-history/javascript/VersionHistory.js');
         }
@@ -33,15 +43,18 @@ class VersionHistoryExtension extends DataExtension
      */
     public function getVersionFieldValue($record, $fieldInfo)
     {
-        if ($fieldInfo['Type'] == 'HasOne') {
+        if ($fieldInfo['Type'] == 'HasOne' && method_exists($record, $fieldInfo['Name'])) {
             $hasOne = $record->{$fieldInfo['Name']}();
             return Convert::RAW2XML($hasOne->getTitle());
         } else {
             $dbField = $record->dbObject($fieldInfo['Name']);
-            if (method_exists($dbField, 'Nice')) {
-                return $dbField->Nice();
+
+            if (is_object($dbField)) {
+                if (method_exists($dbField, 'Nice')) {
+                    return $dbField->Nice();
+                }
+                return Convert::RAW2XML($dbField->Value);
             }
-            return Convert::RAW2XML($dbField->Value);
         }
     }
 
@@ -55,6 +68,8 @@ class VersionHistoryExtension extends DataExtension
      */
     public function VersionComparisonSummary($versionID = null, $otherVersionID = null)
     {
+        $toRecord = null;
+
         if ($versionID && $otherVersionID) {
             // Compare two specified versions
             if ($versionID > $otherVersionID) {
@@ -69,13 +84,17 @@ class VersionHistoryExtension extends DataExtension
         } else {
             // Compare specified version with previous. Fallback to latest version if none specified.
             $filter = '';
+
             if ($versionID) {
-                $filter = "\"ID\" <= '$versionID'";
+                $filter = "\"Version\" <= '$versionID'";
             }
-            $versions = $this->owner->allVersions($filter, '', 2);
+
+            $versions = $this->owner->AllVersions($filter, '', 2);
+
             if ($versions->count() === 0) {
                 return false;
             }
+
             $toRecord = $versions->first();
             $fromRecord = ($versions->count() === 1) ? null : $versions->last();
         }
@@ -106,10 +125,20 @@ class VersionHistoryExtension extends DataExtension
 
         // Compare values between records and make them look nice
         foreach ($fieldNames as $fieldName => $fieldInfo) {
-            $compareValue = ($fromRecord && $toRecord->$fieldInfo['FieldName'] !== $fromRecord->$fieldInfo['FieldName'])
-                ? Diff::compareHTML($this->getVersionFieldValue($fromRecord, $fieldInfo), $this->getVersionFieldValue($toRecord, $fieldInfo))
-                : $this->getVersionFieldValue($toRecord, $fieldInfo);
-            $field = ReadonlyField::create("VersionHistory$fieldName", $this->owner->fieldLabel($fieldName), $compareValue);
+            $currFieldName = $fieldInfo['FieldName'];
+
+            if ((isset($fromRecord) && $toRecord->{$currFieldName} !== $fromRecord->{$currFieldName})) {
+                $compareValue = Diff::compareHTML($this->getVersionFieldValue($fromRecord, $fieldInfo), $this->getVersionFieldValue($toRecord, $fieldInfo));
+            } else {
+                $compareValue = $this->getVersionFieldValue($toRecord, $fieldInfo);
+            }
+
+            $field = ReadonlyField::create(
+                "VersionHistory$fieldName",
+                $this->owner->fieldLabel($fieldName),
+                $compareValue
+            );
+
             $field->dontEscape = true;
             $fields->push($field);
         }
@@ -125,7 +154,8 @@ class VersionHistoryExtension extends DataExtension
      */
     public function getVersionsFormFields()
     {
-        $versions = $this->owner->allVersions();
+        $versions = $this->owner->AllVersions();
+
         if (!$versions->count()) {
             return false;
         }
