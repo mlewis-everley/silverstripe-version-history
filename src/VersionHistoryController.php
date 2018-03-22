@@ -8,6 +8,7 @@ use SilverStripe\Control\Controller;
 
 class VersionHistoryController extends LeftAndMain
 {
+    private static $url_segment = "cms-version-history";
 
     private static $url_handlers = array(
         '$Action/$Model/$ID/$VersionID/$OtherVersionID' => 'handleAction'

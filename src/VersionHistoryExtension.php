@@ -14,6 +14,7 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Versioned\Versioned;
 use SilverStripe\Forms\ReadonlyField;
 use SilverStripe\Forms\CheckboxField;
+use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\HTMLReadonlyField;
 use SilverStripe\Forms\HTMLEditor\HTMLEditorField;
 
@@ -26,11 +27,12 @@ class VersionHistoryExtension extends DataExtension
 
         // Only add history field if history exists
         if ($this->owner->ID && $vFields) {
+            $controller = Injector::inst()->get(VersionHistoryController::class);
+
             // URL for ajax request
             $urlBase = Controller::join_links(
                 Director::absoluteBaseURL(),
-                'cms-version-history',
-                'compare',
+                $controller->Link('compare'),
                 str_replace('\\', '-', $this->owner->ClassName),
                 $this->owner->ID
             );
